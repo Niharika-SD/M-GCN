@@ -7,10 +7,6 @@ Created on Wed Jun 10 18:05:02 2020
 
 
 
-# coding: utf-8
-
-# In[1]:
-
 
 import torch
 import numpy as np
@@ -29,9 +25,7 @@ from numpy.testing import rundocs
 #use_cuda = torch.cuda.is_available()
 use_cuda = 0
 
-# %reset
-
-# In[2]:
+%reset
 
 
 class E2EBlock(torch.nn.Module):
@@ -59,11 +53,8 @@ def init_weights(m):
     if type(m) == torch.nn.Linear:
             
             torch.nn.init.xavier_normal(m.weight, gain=torch.nn.init.calculate_gain('relu'))
-#        torch.nn.init.uniform_(m.weight, a=0, b=1e-04)
             m.bias.data.fill_(1e-03)
-# BrainNetCNN Network for fitting Gold-MSI on LSD dataset
 
-# In[3]:
 
 
 class BrainNetCNN(torch.nn.Module):
@@ -82,23 +73,17 @@ class BrainNetCNN(torch.nn.Module):
         self.dense3 = torch.nn.Linear(30,3)
         
     def forward(self, x, y):
-#        print x.size()
-#        
-#        n,r,c = x.size()
-        # x = torch.matmul(y,x) # graph filtering
-#        print x.size()
+
+        x = torch.matmul(y,x) # graph filtering
+
         out_fMRI = F.leaky_relu(self.e2econv1(x),negative_slope=0.1)
         E2E_out = out_fMRI
-#        print self.e2econv1.cnn1.weight.size()
         
-        # out_fMRI = torch.matmul(y,out_fMRI) # graph filtering
-#        out_fMRI = F.leaky_relu(self.e2econv2(out_fMRI),negative_slope=0.1)
-     
-        # out_fMRI = torch.matmul(y,out_fMRI) # graph filtering        
+        out_fMRI = torch.matmul(y,out_fMRI) # graph filtering        
         out_fMRI = F.leaky_relu(self.E2N(out_fMRI),negative_slope=0.1)
        
         E2N_out = out_fMRI
-        # out_fMRI = torch.matmul(y,out_fMRI) # graph filtering     
+        out_fMRI = torch.matmul(y,out_fMRI) # graph filtering     
        
         out_fMRI = F.leaky_relu(self.N2G(out_fMRI),negative_slope=0.1)
      
@@ -110,17 +95,12 @@ class BrainNetCNN(torch.nn.Module):
         
         return out,E2E_out,E2N_out,N2G_out
 
-
-# Loader for GoldMSI-LSD77 dataset
-
-# In[20]:
-    
 import sys
 
 data_size = 5
 
 train_dat_size =  'data_all_sub_'+ str(data_size) 
-# = sys.argv[1]
+
 behavdir = "/home/niharika-shimona/Documents/Projects/Autism_Network/Sparse-Connectivity-Patterns-fMRI/Weighted_Frob_Norm/DTI_data/Multi_Aut_DTIfMRI_CV/Final/"
 
 from sklearn.model_selection import train_test_split
@@ -143,12 +123,7 @@ class GoldMSI_LSD_Dataset(torch.utils.data.Dataset):
         self.directory = directory
         self.mode = mode
         self.transform = transform
- 
-#        x = sio.loadmat(os.path.join(directory,"data_complete.mat"))['corr_test'][0][cvf][:][:]
-#        y_all = sio.loadmat(os.path.join(directory,"data_complete.mat"))['Y']            
-#        y_2=y_all[:,[3,4]]
-        
-  #      y = normalize(y_all,axis=1)
+
         strtrain =  str(train_dat_size) +".mat"
         X_train = sio.loadmat(os.path.join(directory, strtrain))['corr_train'][0][cvf][:][:]
         X_train_DTI = sio.loadmat(os.path.join(directory, strtrain ))['L_train'][0][cvf][:][:]
@@ -164,9 +139,7 @@ class GoldMSI_LSD_Dataset(torch.utils.data.Dataset):
         
         Y_train = torch.zeros((Y_train_temp.shape[0],Y_train_temp.shape[1]))
         Y_test = torch.zeros((Y_test_temp.shape[0],Y_test_temp.shape[1]))
-        
-#        Y_train = torch.zeros((Y_train_temp.shape[0],1))
-#        Y_test = torch.zeros((Y_test_temp.shape[0],1))
+   
         
         for i in range(Y_train.size()[1]):
             
@@ -184,9 +157,7 @@ class GoldMSI_LSD_Dataset(torch.utils.data.Dataset):
                
                Y_train[:,i] = (f_0)*(torch.from_numpy((Y_train_temp[:,i]).ravel()).float())
                Y_test[:,i] = (f_0)*(torch.from_numpy((Y_test_temp[:,i]).ravel()).float())
-#        Y_train = f_0*torch.from_numpy(Y_train_temp).float()
-#        Y_test = f_0*torch.from_numpy(Y_test_temp).float()
-#        
+
 
         
         if self.mode=="train":
@@ -211,9 +182,7 @@ class GoldMSI_LSD_Dataset(torch.utils.data.Dataset):
             
             
         self.X = torch.FloatTensor(np.expand_dims(x,1).astype(np.float32))
-
         self.L = torch.FloatTensor(np.expand_dims(l,1).astype(np.float32))
-        #self.X = torch.FloatTensor(x.astype(np.float32))
         self.Y = y
          
         print(self.mode,self.X.shape,(self.Y.shape))
@@ -259,9 +228,7 @@ def train(epoch):
         outputs = net(inputs,inputs2)
         
         loss = criterion(outputs[0].mul(mask), targets.mul(mask)) + criterion2(outputs[0].mul(mask), targets.mul(mask))
-        # loss = torch.norm(outputs[0].mul(mask) - targets.mul(mask),2) + torch.norm(outputs[0].mul(mask) - targets.mul(mask),1)
-        
-        # loss = loss/(targets.size()[0])
+
         
         loss.backward(retain_graph=True)
         optimizer.step() 
@@ -269,16 +236,9 @@ def train(epoch):
         
         # print statistics
         running_loss += loss.data
-
-       
-        # if batch_idx % 10 == 9:    # print every 10 mini-batches
-        #     print('Training loss: %.6f' % ( running_loss /10.0))
-            
-#        _, predicted = torch.max(outputs.data, 1)
         
         total += targets.size(0)
         
-        #correct += predicted.eq(targets.data).cpu().sum()
     scheduler.step()
 
     return running_loss/total
@@ -307,8 +267,6 @@ def test(net):
             mask = (targets>0).type(torch.FloatTensor)
             
             loss = criterion(outputs[0].mul(mask), targets.mul(mask)) + criterion2(outputs[0].mul(mask), targets.mul(mask))
-            # loss = torch.norm(outputs[0].mul(mask) - targets.mul(mask),2) + torch.norm(outputs[0].mul(mask) - targets.mul(mask),1)
-            # loss = loss/targets.size()[0]
             
             test_loss += loss.data
             
@@ -323,15 +281,8 @@ def test(net):
         if batch_idx % 5 == 4:    # print every 5 mini-batches
             print('Test loss: %.6f' % ( running_loss/batch_idx))
             
-        
-        #_, predicted = torch.max(outputs.data, 1)
-        #total += targets.size(0)
-        #correct += predicted.eq(targets.data).cpu().sum()
-
-    
     return np.vstack(preds),np.vstack(ytrue),running_loss/(batch_idx)
-    # Save checkpoint.
-    #acc = 100.*correct/total
+
     
 
 for k in range(1,10):
@@ -344,8 +295,8 @@ for k in range(1,10):
     import sys
     nbepochs = 40
     
-    folder_name = behavdir + 'GCN_Multi/no_DTI/' + str(k) + '_iter/'
-    # + str(lr) + '_lr/' + str(wd) + '_wd/' 
+    folder_name = behavdir + 'GCN_Multi/DTI/' + str(k) + '_iter/'
+
     
             
     if not os.path.exists(folder_name):
@@ -367,13 +318,6 @@ for k in range(1,10):
 
 # Training
 
-
-    
-
-
-# In[22]:
-
-
     net = BrainNetCNN(trainset.X,trainset.L)
     
     foldername_preload = '//home/niharika-shimona/Documents/Projects/Autism_Network/Sparse-Connectivity-Patterns-fMRI/Weighted_Frob_Norm/DTI_data/Multi_Aut_DTIfMRI_CV/GCN_Multi/Pre-train/E2E/Not_pretrained/23_iter/32_HL/'
@@ -383,23 +327,6 @@ for k in range(1,10):
             data_pl = pickle.load(f)
 
     model = data_pl['model']
-    
-    # net.e2econv1.cnn1.weight =  model.e2econv1.cnn1.weight 
-    # net.e2econv1.cnn2.weight =  model.e2econv1.cnn2.weight 
-    # net.E2N.weight =  model.E2N.weight
-    # net.N2G.weight =  model.N2G.weight
-    # net.dense1.weight = model.dense1.weight
-    # net.dense2.weight = model.dense2.weight
-    # net.dense3.weight = model.dense3.weight
-            
-        
-   
-#wd = 0
-
-
-### Weights initialization for the dense layers using He Uniform initialization
-### He et al., http://arxiv.org/abs/1502.01852
-
 
     net.apply(init_weights)
 
@@ -408,19 +335,9 @@ for k in range(1,10):
     criterion = torch.nn.MSELoss()
     
     optimizer = torch.optim.SGD(net.parameters(),lr=lr,momentum=momentum,nesterov=True,weight_decay=wd)
-#    optimizer = torch.optim.Adam(net.parameters(), lr=lr,weight_decay=wd)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 10, gamma=0.9, last_epoch=-1)
 
-# In[23]:
-
-
-
-
 # Run Epochs of training and testing 
-
-# In[ ]:
-
-
     from sklearn.metrics import mean_absolute_error as mae
     from scipy.stats import pearsonr
 
@@ -461,39 +378,12 @@ for k in range(1,10):
         
         mae_1 = mae(preds[:,0],y_true[:,0])
         pears_1 = pearsonr(preds[:,0],y_true[:,0])
-        
-        # mae_2 = mae(preds[:,1],y_true[:,1])
-        # pears_2 = pearsonr(preds[:,1],y_true[:,1])
+ 
     
         allmae_test1.append(mae_1)
         allpears_test1.append(pears_1)
         
         print("Epoch %d" % epoch)
-        # allmae_test2.append(mae_2)
-        # allpears_test2.append(pears_2)
-        
-#        print("Test Set : MAE for ADOS: %0.2f %%" % (mae_1))
-#        print("Test Set : pearson R for ADOS : %0.2f, p = %0.2f" % (pears_1[0],pears_1[1]))
-#
-#        mae_2 = mae(preds[:,1],y_true[:,1])
-#        pears_2 = pearsonr(preds[:,1],y_true[:,1])
-#    
-#        allmae_test2.append(mae_2)
-#        allpears_test2.append(pears_2)
-#    
-#        print("Test Set : MAE for SRS : %0.2f %%" % (mae_2))
-#        print("Test Set : pearson R for SRS : %0.2f, p = %0.2f" % (pears_2[0],pears_2[1]))
-#
-#        mae_3 = mae(preds[:,2],y_true[:,2])
-#        pears_3 = pearsonr(preds[:,2],y_true[:,2])
-#    
-#        allmae_test2.append(mae_3)
-#        allpears_test2.append(pears_3)
-#    
-#        print("Test Set : MAE for Praxis : %0.2f %%" % (mae_3))
-#        print("Test Set : pearson R for Praxis : %0.2f, p = %0.2f" % (pears_3[0],pears_3[1]))
-
-                
 
     dict_save = {'Y_train_meas':Y_train_meas,'Y_train_pred':Y_train_pred,
                      'Y_test_meas':Y_test_meas,'Y_test_pred':Y_test_pred}
@@ -513,9 +403,7 @@ for k in range(1,10):
         
     fig3,ax3 = plt.subplots()
     ax3.plot(list(range(nbepochs)),allloss_train,'r',label='train')
-    # ax3.plot(list(range(nbepochs)),allmae_test2,'g',label='test score2')
     ax3.plot(list(range(nbepochs)),allmae_test1,'b',label='test score1')
-    # ax3.plot(list(range(nbepochs)),allpears_test1,'g',label='test score1')
     ax3.legend(loc='upper left')
        
     plt.title('Loss',fontsize=16)
@@ -523,6 +411,6 @@ for k in range(1,10):
     plt.xlabel('num of iterations',fontsize=12)
     plt.show()
     figname3 = folder_name + '/Loss_'+ str(cvf) +'.png'
-    fig3.savefig(figname3)   # save the figure to fil
+    fig3.savefig(figname3)   
     plt.close(fig3)
 
