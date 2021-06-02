@@ -1,6 +1,6 @@
 # M-GCN
 Code for the MIDL 2021 submission: https://openreview.net/forum?id=ud-iBiED9zb&amp;noteId=IctPjXmbjL
-![M-GCN](https://github.com/Niharika-SD/M_GCN/blob/master/Images/M_GCN.PNG)
+![M-GCN](https://github.com/Niharika-SD/M-GCN/blob/main/Images/M-GCN.PNG)
 
 #INSTRUCTIONS:
 Open Terminal, type python Runner_Script.py
